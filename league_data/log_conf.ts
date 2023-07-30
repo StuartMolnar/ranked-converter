@@ -29,7 +29,7 @@ const logger = winston.createLogger({
   ),
   transports: [
     fileTransport,
-    consoleTransport, // Add the console transport
+    consoleTransport,
   ],
 });
 
