@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@types/puppeteer": "^7.0.4",
+    "puppeteer": "^20.9.0",
+    "winston": "^3.10.0"
+  }
+}
