@@ -99,11 +99,17 @@ async function extractDataFromElement(page: Page, selector: string, subselector:
  */
 async function scrapeUrl(url: string, selector: string, subselector: string): Promise<RankDataProcessor | null> {
     logger.info(`URL: ${url}, SELECTOR: ${selector}, SUBSELECTOR: ${subselector}`);
-    const browser = await puppeteer.launch({ headless: "new" });
+    const browser = await puppeteer.launch({
+        ignoreHTTPSErrors: true,
+        headless: 'new',
+        executablePath: '/usr/bin/google-chrome',
+        args: ['--no-sandbox']
+      });
     const page = await browser.newPage();
 
     try {
-        await page.goto(url, { waitUntil: 'networkidle2' });
+        await page.setJavaScriptEnabled(false);
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 10000 });
         let textData = await extractDataFromElement(page, selector, subselector);
         textData = textData.map(item => item.replace(/\s\s+/g, ' ').replace(/\n/g, ' '));
         if (textData.length !== 0) {
@@ -116,6 +122,7 @@ async function scrapeUrl(url: string, selector: string, subselector: string): Pr
                     rankData.push(rank1);
                 }
             })
+            rankData.reverse();
             const processedData = new RankDataProcessor(rankData);
             return processedData;
         } else {
