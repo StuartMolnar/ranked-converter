@@ -61,7 +61,7 @@ class RankDataProcessor {
     private parseLines(lines: string[]): RankData[] {
         let regex = /^([\D]*)\s(\d+.\d+)%/;
         let cumulativePercentage = new Decimal(0);
-        let processedData: Array<{tier: string, rankPercentage: Decimal, cumulativePercentage: Decimal}> = [];
+        let processedData: RankData[] = [];
 
         for(let line of lines) {
             let match = line.match(regex);
