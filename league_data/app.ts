@@ -3,9 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import yaml from 'js-yaml';
 import logger from './log_conf';
-import RankDataProcessor from './process_data';
+import RankDataProcessor, { RankData } from './process_data';
 import util from 'util';
-import { Decimal } from 'decimal.js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
@@ -42,23 +41,6 @@ try {
         logger.error(`Failed to load configuration from app_conf.yml: ${error}`);
     }
     throw error;
-}
-
-/**
- * Interface for the rank data object.
- * 
- * @interface
- * 
- * @property {string} tier - The tier of the league rank.
- * 
- * @property {Decimal} rank_percentile - The percentage of players at or above this rank.
- * 
- * @property {Decimal} cumulative_percentile - The cumulative percentage of players at or above this rank.
- */
-interface RankData {
-    tier: string;
-    rank_percentile: Decimal;
-    cumulative_percentile: Decimal;
 }
 
 /**

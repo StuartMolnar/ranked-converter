@@ -12,7 +12,7 @@ import logger from './log_conf';
  * 
  * @property {Decimal} cumulative_percentile - The cumulative percentage of players at or above this rank.
  */
-interface RankData {
+export interface RankData {
     tier: string;
     rank_percentile: Decimal;
     cumulative_percentile: Decimal;
