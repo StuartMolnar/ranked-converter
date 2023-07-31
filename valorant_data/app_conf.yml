@@ -1,0 +1,3 @@
+URL: https://www.esportstales.com/valorant/rank-distribution-and-percentage-of-players-by-tier
+SELECTOR: 'table'
+SUBSELECTOR: 'tbody tr'
