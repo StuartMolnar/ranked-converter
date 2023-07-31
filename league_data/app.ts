@@ -1,9 +1,20 @@
 import puppeteer, { Page, ElementHandle } from 'puppeteer';
+import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import yaml from 'js-yaml';
 import logger from './log_conf';
 import RankDataProcessor from './process_data';
 import util from 'util';
+import { Decimal } from 'decimal.js';
+
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+    throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY environment variables are required');
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 /**
  * Represents the configuration for the scraper, defined in the YAML config file.
@@ -31,6 +42,23 @@ try {
         logger.error(`Failed to load configuration from app_conf.yml: ${error}`);
     }
     throw error;
+}
+
+/**
+ * Interface for the rank data object.
+ * 
+ * @interface
+ * 
+ * @property {string} tier - The tier of the league rank.
+ * 
+ * @property {Decimal} rank_percentile - The percentage of players at or above this rank.
+ * 
+ * @property {Decimal} cumulative_percentile - The cumulative percentage of players at or above this rank.
+ */
+interface RankData {
+    tier: string;
+    rank_percentile: Decimal;
+    cumulative_percentile: Decimal;
 }
 
 /**
@@ -91,13 +119,13 @@ async function extractDataFromElement(page: Page, selector: string): Promise<str
  * @param url - The URL of the webpage to scrape.
  * @param selector - The CSS selector to use for finding elements.
  * 
- * @returns A RankDataProcessor instance containing the processed rank data, or null if an error occurred during scraping.
+ * @returns An array of RankData, or null if an error occurred during scraping.
  */
-async function scrapeUrl(url: string, selector: string): Promise<RankDataProcessor | null> {
+async function scrapeUrl(url: string, selector: string): Promise<RankData[] | null> {
     const browser = await puppeteer.launch({ 
         ignoreHTTPSErrors: true,
         headless: 'new',
-        executablePath: '/usr/bin/google-chrome',
+        //executablePath: '/usr/bin/google-chrome',
         args: ['--no-sandbox']
      });
     const page = await browser.newPage();
@@ -111,7 +139,7 @@ async function scrapeUrl(url: string, selector: string): Promise<RankDataProcess
             if (textData[0] === config.HEADER) {
                 textData.shift();
             }
-            const processedData = new RankDataProcessor(textData);
+            const processedData = new RankDataProcessor(textData).processedData;
             return processedData;
         } else {
             logger.warn(`No data extracted from page. Check your CSS selector and ensure the page structure hasn't changed.`);
@@ -127,11 +155,30 @@ async function scrapeUrl(url: string, selector: string): Promise<RankDataProcess
 }
 
 
+/**
+ * Inserts or updates the provided data into the specified table in the database.
+ * 
+ * @param tableName - The name of the table in which to insert or update the data.
+ * @param data - The data to insert or update.
+ */
+async function upsertData(tableName: string, data: RankData[]): Promise<void> {
+    const { error } = await supabase.from(tableName).upsert(data, { onConflict: 'tier' });
+    if (error) {
+        logger.error(`Failed to insert or update data into table "${tableName}": ${error.message}`);
+        throw error;
+    } else {
+        logger.info(`Successfully upserted ${data.length} items into table "${tableName}"`);
+    }
+}
+
 scrapeUrl(config.URL, config.SELECTOR)
     .then(processedData => {
         if (processedData) {
             logger.info(`Scraped data processed successfully`);
             logger.debug(util.inspect(processedData, { showHidden: false, depth: null }));
+            upsertData('League_Ranks', processedData).catch(error => {
+                logger.error(`Error occurred during the data insertion process: ${error.message}`);
+            });
         } else {
             logger.error("Failed to scrape data");
         }
