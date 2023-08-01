@@ -123,6 +123,40 @@ async function scrapeUrl(url: string, selector: string, subselector: string): Pr
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 10000 });
         let textData = await extractDataFromElement(page, selector, subselector);
         textData = textData.map(item => item.replace(/\s\s+/g, ' ').replace(/\n/g, ' '));
+        
+        // Create two separate arrays
+        let firstGroup: string[] = [];
+        let secondGroup: string[] = [];
+        let radiantRank;
+
+        // Iterate over the textData array
+        textData.forEach(item => {
+            // Check if it is a Radiant rank
+            if (item.startsWith('Radiant')) {
+                radiantRank = item;
+            } else {
+                const ranks = item.split('%').filter(Boolean).map(s => `${s.trim()}%`);
+                
+                // We expect to have two ranks per item except for Radiant rank
+                if (ranks.length === 2) {
+                    firstGroup.push(ranks[0]);
+                    secondGroup.push(ranks[1]);
+                } else if (ranks.length === 1) {
+                    firstGroup.push(ranks[0]);
+                }
+            }
+        });
+
+        // Merge the first group, second group and radiant rank
+        textData = [...firstGroup, ...secondGroup];
+        if (radiantRank) {
+            textData.push(radiantRank);
+        }
+
+        textData.reverse();
+
+        console.log('text data:');
+        console.log(textData);
         if (textData.length !== 0) {
             const processedData = new RankDataProcessor(textData).processedData;
             return processedData;
@@ -139,6 +173,7 @@ async function scrapeUrl(url: string, selector: string, subselector: string): Pr
 
     return null;
 }
+
 
 
 /**

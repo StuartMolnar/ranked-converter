@@ -12,7 +12,7 @@ const fileTransport = new transports.File({
 
 // Create a transport for logging to the console
 const consoleTransport = new transports.Console({
-  level: 'info', // Only log 'warn' and above to console
+  level: 'debug', // Only log 'warn' and above to console
   format: format.printf(info => {
     return `${info.timestamp} - ${info.level.toUpperCase()} - ${info.message}`;
   }),
