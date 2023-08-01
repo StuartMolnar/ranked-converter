@@ -144,12 +144,17 @@ async function scrapeUrl(url: string, selector: string): Promise<RankData[] | nu
  * @param data - The data to insert or update.
  */
 async function upsertData(tableName: string, data: RankData[]): Promise<void> {
-    const { error } = await supabase.from(tableName).upsert(data, { onConflict: 'tier' });
+    const dataWithTimestamps = data.map(row => ({
+        ...row,
+        updated_at: new Date()
+    }));
+
+    const { error } = await supabase.from(tableName).upsert(dataWithTimestamps, { onConflict: 'tier' });
     if (error) {
         logger.error(`Failed to insert or update data into table "${tableName}": ${error.message}`);
         throw error;
     } else {
-        logger.info(`Successfully upserted ${data.length} items into table "${tableName}"`);
+        logger.info(`Successfully upserted ${dataWithTimestamps.length} items into table "${tableName}"`);
     }
 }
 
