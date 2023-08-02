@@ -2,7 +2,9 @@
 
 Web app to convert player ranks between Valorant and League of Legends by ranked percentile
 
-<details><summary># Dev Section</summary>
+<details><summary><h3>Create the Azure Container App Jobs</h3></summary>
+
+This will allow the data gathering containers to run on a weekly schedule, keeping the ranked data up to date.
 
 <details><summary>Create resource group:</summary>
 
