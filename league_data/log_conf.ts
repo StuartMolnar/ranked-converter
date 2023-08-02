@@ -1,29 +1,44 @@
 import winston, { format, transports } from 'winston';
+import yaml from 'js-yaml';
+import fs from 'fs';
 
-// Create a transport for writing to the file
+function loadConfig(file: string): any {
+    try {
+        const configFile = fs.readFileSync(file, 'utf8');
+        return yaml.load(configFile);
+    } catch (error) {
+        if (error instanceof Error) {
+            logger.error(`Failed to load configuration from ${file}: ${error.message}`);
+        } else {
+            logger.error(`Failed to load configuration from ${file}: ${error}`);
+        }
+        throw error;
+    }
+}
+
+const config = loadConfig('app_conf.yml');
+
 const fileTransport = new transports.File({
-  level: 'debug', // Log 'info' and above to file
-  filename: `app.log`,
+  level: config.LOGGING.LEVEL,
+  filename: config.LOGGING.FILE_NAME,
   format: format.printf(info => {
     return `${info.timestamp} - ${info.level.toUpperCase()} - ${info.message}`;
   }),
-  maxsize: 1048576, // max size of 1MB
+  maxsize: config.LOGGING.MAX_FILE_SIZE,
 });
 
-// Create a transport for logging to the console
 const consoleTransport = new transports.Console({
-  level: 'debug', // Only log 'warn' and above to console
+  level: config.LOGGING.LEVEL,
   format: format.printf(info => {
     return `${info.timestamp} - ${info.level.toUpperCase()} - ${info.message}`;
   }),
 });
 
-// Create a logger instance
 const logger = winston.createLogger({
-  level: 'debug', // Global logging level
+  level: config.LOGGING.LEVEL,
   format: format.combine(
     format.timestamp({
-      format: 'YYYY-MM-DD HH:mm:ss.SSS',
+      format: config.LOGGING.TIMESTAMP_FORMAT,
     }),
     format.errors({ stack: true }),
     format.splat(),

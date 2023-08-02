@@ -25,23 +25,22 @@ interface Config {
     URL: string;
     SELECTOR: string;
     HEADER: string;
+    TABLE_NAME: string;
 }
 
-let config: Config;
-
-try {
-    const configFile = fs.readFileSync('app_conf.yml', 'utf8');
-    config = yaml.load(configFile) as Config;
-    logger.info(`Configuration loaded from app_conf.yml`);
-} catch (error) {
-    if (error instanceof Error) {
-        logger.error(`Failed to load configuration from app_conf.yml: ${error.message}`);
-    } else {
-        // This will handle situations where the thrown error isn't an instance of Error.
-        logger.error(`Failed to load configuration from app_conf.yml: ${error}`);
+const loadConfig = (): Config => {
+    try {
+        const configFile = fs.readFileSync('app_conf.yml', 'utf8');
+        const config = yaml.load(configFile) as Config;
+        logger.info(`Configuration loaded from app_conf.yml`);
+        return config;
+    } catch (error) {
+        logger.error(`Failed to load configuration from app_conf.yml`, error);
+        throw error;
     }
-    throw error;
 }
+
+const config = loadConfig();
 
 /**
  * Extracts the text content from each DOM element that matches the provided CSS selector.
@@ -107,7 +106,6 @@ async function scrapeUrl(url: string, selector: string): Promise<RankData[] | nu
     const browser = await puppeteer.launch({ 
         ignoreHTTPSErrors: true,
         headless: 'new',
-        //executablePath: '/usr/bin/google-chrome',
         args: ['--no-sandbox']
      });
     const page = await browser.newPage();
@@ -140,21 +138,20 @@ async function scrapeUrl(url: string, selector: string): Promise<RankData[] | nu
 /**
  * Inserts or updates the provided data into the specified table in the database.
  * 
- * @param tableName - The name of the table in which to insert or update the data.
  * @param data - The data to insert or update.
  */
-async function upsertData(tableName: string, data: RankData[]): Promise<void> {
+async function upsertData(data: RankData[]): Promise<void> {
     const dataWithTimestamps = data.map(row => ({
         ...row,
         updated_at: new Date()
     }));
 
-    const { error } = await supabase.from(tableName).upsert(dataWithTimestamps, { onConflict: 'tier' });
+    const { error } = await supabase.from(config.TABLE_NAME).upsert(dataWithTimestamps, { onConflict: 'tier' });
     if (error) {
-        logger.error(`Failed to insert or update data into table "${tableName}": ${error.message}`);
+        logger.error(`Failed to insert or update data into table "${config.TABLE_NAME}": ${error.message}`);
         throw error;
     } else {
-        logger.info(`Successfully upserted ${dataWithTimestamps.length} items into table "${tableName}"`);
+        logger.info(`Successfully upserted ${dataWithTimestamps.length} items into table "${config.TABLE_NAME}"`);
     }
 }
 
@@ -163,7 +160,7 @@ scrapeUrl(config.URL, config.SELECTOR)
         if (processedData) {
             logger.info(`Scraped data processed successfully`);
             logger.debug(util.inspect(processedData, { showHidden: false, depth: null }));
-            upsertData('League_Ranks', processedData).catch(error => {
+            upsertData(processedData).catch(error => {
                 logger.error(`Error occurred during the data insertion process: ${error.message}`);
             });
         } else {

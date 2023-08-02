@@ -1,3 +1,9 @@
 URL: https://www.leagueofgraphs.com/rankings/rank-distribution/na
 SELECTOR: '.box:first-child > .summoners_distribution_table > tbody > tr'
 HEADER: 'Tier Rank Rank % Tier %'
+TABLE_NAME: 'League_Ranks'
+LOGGING:
+  LEVEL: 'info'
+  FILE_NAME: 'app.log'
+  MAX_FILE_SIZE: 1048576
+  TIMESTAMP_FORMAT: 'YYYY-MM-DD HH:mm:ss.SSS'
