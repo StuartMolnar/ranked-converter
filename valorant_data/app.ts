@@ -21,28 +21,35 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
  * SELECTOR - The CSS selector to find the elements to scrape.
  * HEADER - The header text that should be ignored in the scraped data.
  */
+/**
+ * Represents the configuration for the scraper, defined in the YAML config file.
+ * URL - The URL to scrape.
+ * SELECTOR - The CSS selector to find the elements to scrape.
+ * SUBSELECTOR - The subselector to use for further selection within an element.
+ * PUPPETEER_OPTIONS - The options for Puppeteer.
+ * TABLE_NAME - The name of the database table to update.
+ */
 interface Config {
     URL: string;
     SELECTOR: string;
     SUBSELECTOR: string;
+    TABLE_NAME: string;
 }
 
-let config: Config;
 
-try {
-    const configFile = fs.readFileSync('app_conf.yml', 'utf8');
-    config = yaml.load(configFile) as Config;
-    logger.info(`Configuration loaded from app_conf.yml`);
-} catch (error) {
-    if (error instanceof Error) {
-        logger.error(`Failed to load configuration from app_conf.yml: ${error.message}`);
-    } else {
-        // This will handle situations where the thrown error isn't an instance of Error.
-        logger.error(`Failed to load configuration from app_conf.yml: ${error}`);
+const loadConfig = (): Config => {
+    try {
+        const configFile = fs.readFileSync('app_conf.yml', 'utf8');
+        const config = yaml.load(configFile) as Config;
+        logger.info(`Configuration loaded from app_conf.yml`);
+        return config;
+    } catch (error) {
+        logger.error(`Failed to load configuration from app_conf.yml`, error);
+        throw error;
     }
-    throw error;
 }
 
+const config = loadConfig();
 
 /**
  * Extracts the text content from each DOM element that matches the provided CSS selector.
@@ -110,12 +117,11 @@ async function extractDataFromElement(page: Page, selector: string, subselector:
  */
 async function scrapeUrl(url: string, selector: string, subselector: string): Promise<RankData[] | null> {
     logger.info(`URL: ${url}, SELECTOR: ${selector}, SUBSELECTOR: ${subselector}`);
-    const browser = await puppeteer.launch({
+    const browser = await puppeteer.launch({ 
         ignoreHTTPSErrors: true,
         headless: 'new',
-        executablePath: '/usr/bin/google-chrome',
         args: ['--no-sandbox']
-    });
+     });
     const page = await browser.newPage();
 
     try {
@@ -179,22 +185,20 @@ async function scrapeUrl(url: string, selector: string, subselector: string): Pr
 /**
  * Inserts or updates the provided data into the specified table in the database.
  * 
- * @param tableName - The name of the table in which to insert or update the data.
  * @param data - The data to insert or update.
  */
-async function upsertData(tableName: string, data: RankData[]): Promise<void> {
-    // Add a timestamp to the data
+async function upsertData(data: RankData[]): Promise<void> {
     const dataWithTimestamps = data.map(row => ({
         ...row,
         updated_at: new Date()
     }));
 
-    const { error } = await supabase.from(tableName).upsert(dataWithTimestamps, { onConflict: 'tier' });
+    const { error } = await supabase.from(config.TABLE_NAME).upsert(dataWithTimestamps, { onConflict: 'tier' });
     if (error) {
-        logger.error(`Failed to insert or update data into table "${tableName}": ${error.message}`);
+        logger.error(`Failed to insert or update data into table "${config.TABLE_NAME}": ${error.message}`);
         throw error;
     } else {
-        logger.info(`Successfully upserted ${dataWithTimestamps.length} items into table "${tableName}"`);
+        logger.info(`Successfully upserted ${dataWithTimestamps.length} items into table "${config.TABLE_NAME}"`);
     }
 }
 
@@ -203,7 +207,7 @@ scrapeUrl(config.URL, config.SELECTOR, config.SUBSELECTOR)
         if (processedData) {
             logger.info(`Scraped data processed successfully`);
             logger.debug(util.inspect(processedData, { showHidden: false, depth: null }));
-            upsertData('Valorant_Ranks', processedData).catch(error => {
+            upsertData(processedData).catch(error => {
                 logger.error(`Error occurred during the data insertion process: ${error.message}`);
             });
         } else {

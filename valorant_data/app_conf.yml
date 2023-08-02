@@ -1,3 +1,9 @@
 URL: https://www.esportstales.com/valorant/rank-distribution-and-percentage-of-players-by-tier
 SELECTOR: 'table'
 SUBSELECTOR: 'tbody tr'
+TABLE_NAME: 'Valorant_Ranks'
+LOGGING:
+  LEVEL: 'info'
+  FILE_NAME: 'app.log'
+  MAX_FILE_SIZE: 1048576
+  TIMESTAMP_FORMAT: 'YYYY-MM-DD HH:mm:ss.SSS'
