@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Head from 'next/head';
 import { CssBaseline, Container, Typography, Box, ToggleButton, ToggleButtonGroup, FormControl, InputLabel, Select, MenuItem, Button, Card, CardContent, ThemeProvider, createTheme } from '@mui/material';
 import { createClient } from '@supabase/supabase-js';
 
@@ -10,11 +11,17 @@ const darkTheme = createTheme({
   palette: {
     mode: 'dark',
   },
+  typography: {
+    fontFamily: 'Roboto',
+  },
 });
 
 const lightTheme = createTheme({
   palette: {
     mode: 'light',
+  },
+  typography: {
+    fontFamily: 'Roboto',
   },
 });
 
@@ -102,84 +109,85 @@ export default function Home() {
 
 
   return (
-    <ThemeProvider theme={darkTheme}>
-      <CssBaseline>
-        <Container sx={{
-          height: '90vh',
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'center' 
-        }}>
-          
-          <ThemeProvider theme={lightTheme}>
-            <Typography sx={{color: '#FAF9F6'}} variant="h4" component="h1" gutterBottom align="center">
-              Ranked Converter
-            </Typography>
-            <Card sx={{bgcolor: '#FAF9F6'}}>
-              <CardContent>
-                <Box sx={{ my: 2 }}>
-                <ToggleButtonGroup
-                  value={game}
-                  exclusive
-                  onChange={handleGameChangeAndReset}
-                  aria-label="game selection"
-                >
-                  <ToggleButton value="League of Legends" aria-label="League of Legends" disabled={game === "League of Legends"}>
-                    League of Legends
-                  </ToggleButton>
-                  <ToggleButton value="Valorant" aria-label="Valorant" disabled={game === "Valorant"}>
-                    Valorant
-                  </ToggleButton>
-                </ToggleButtonGroup>
-                </Box>
-                <Box sx={{ my: 2 }}>
-                  <FormControl fullWidth>
-                    <InputLabel id="rank-label">{game} Rank</InputLabel>
-                    <Select
-                      labelId="rank-label"
-                      value={rank}
-                      onChange={handleRankChange}
-                      onOpen={() => {
-                        setConvertedRank('');
-                        setConvertedRankPercentile(0);
-                      }}
-                      label={`${game} Rank`}
-                    >
-                      {allRanks[game].map((rank) => (
-                        <MenuItem key={rank.tier} value={rank.tier}>
-                          {rank.tier}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Box>
-                <Box sx={{ my: 2 }}>
-                  <Button variant="contained" onClick={handleConvert} fullWidth>
-                    Convert
-                  </Button>
-                </Box>
-                {convertedRank && (
-                  <Typography variant="h6" align="center">
-                    {!(rank === allRanks['League of Legends'][allRanks['League of Legends'].length - 1].tier || rank === allRanks['Valorant'][allRanks['Valorant'].length - 1].tier) ? (
-                    <>
-                      In {game === 'League of Legends' ? 'League' : 'Valorant'}, {rank} is the top {currentPercentile}%
-                      <br />
-                      In {game === 'League of Legends' ? 'Valorant': 'League'}, {convertedRank} is the top {convertedRankPercentile}%
-                      <br />
-                      So {game === 'League of Legends' ? 'League' : 'Valorant'} {rank} is equivelant to the top {equivalentRankPercentile}% of {game === 'League of Legends' ? 'Valorant': 'League'} {convertedRank}
-                    </>
-                  ) : (
-                    <>
-                      {rank} is the lowest rank.
-                    </>
+    <>
+      <Head>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:200,400,500&display=swap" />
+      </Head>
+      <ThemeProvider theme={darkTheme}>
+        <CssBaseline>
+          <Container sx={{
+            height: '90vh',
+            display: 'flex', 
+            flexDirection: 'column', 
+            justifyContent: 'center' 
+          }}>
+            
+            <ThemeProvider theme={lightTheme}>
+              <Typography sx={{color: '#FAF9F6'}} variant="h4" component="h1" gutterBottom align="center">
+                Ranked Converter
+              </Typography>
+              <Card sx={{bgcolor: '#FAF9F6'}}>
+                <CardContent>
+                  <Box sx={{ my: 2 }}>
+                  <ToggleButtonGroup
+                    value={game}
+                    exclusive
+                    onChange={handleGameChangeAndReset}
+                    aria-label="game selection"
+                  >
+                    <ToggleButton value="League of Legends" aria-label="League of Legends" disabled={game === "League of Legends"}>
+                      League of Legends
+                    </ToggleButton>
+                    <ToggleButton value="Valorant" aria-label="Valorant" disabled={game === "Valorant"}>
+                      Valorant
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                  </Box>
+                  <Box sx={{ my: 2 }}>
+                    <FormControl fullWidth>
+                      <InputLabel id="rank-label">{game} Rank</InputLabel>
+                      <Select
+                        labelId="rank-label"
+                        value={rank}
+                        onChange={handleRankChange}
+                        onOpen={() => {
+                          setConvertedRank('');
+                          setConvertedRankPercentile(0);
+                        }}
+                        label={`${game} Rank`}
+                      >
+                        {allRanks[game].map((rank) => (
+                          <MenuItem key={rank.tier} value={rank.tier}>
+                            {rank.tier}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
+                  <Box sx={{ my: 2 }}>
+                    <Button variant="contained" onClick={handleConvert} fullWidth>
+                      Convert
+                    </Button>
+                  </Box>
+                  {convertedRank && (
+                    <Typography component="div" align="center" variant="body1">
+                      {!(rank === allRanks['League of Legends'][allRanks['League of Legends'].length - 1].tier || rank === allRanks['Valorant'][allRanks['Valorant'].length - 1].tier) ? (
+                        <>
+                          <Box mb={1}> <Typography variant="h6" component="span">{rank}</Typography> in {game === 'League of Legends' ? 'League' : 'Valorant'} is the top <Typography variant="h6" component="span">{currentPercentile}%</Typography></Box>
+                          <Box mb={1}><Typography variant="h6" component="span">{convertedRank}</Typography> in {game === 'League of Legends' ? 'Valorant': 'League'} is the top <Typography variant="h6" component="span">{convertedRankPercentile}%</Typography></Box>
+                          <Box>So {game === 'League of Legends' ? 'League' : 'Valorant'} <Typography variant="h6" component="span">{rank}</Typography> is equivelant to the <Typography variant="h6" component="span">top {equivalentRankPercentile}%</Typography> of {game === 'League of Legends' ? 'Valorant': 'League'} <Typography variant="h6" component="span">{convertedRank}</Typography></Box>
+                        </>
+                      ) : (
+                        <Box>{rank} is the lowest rank.</Box>
+                      )}
+                    </Typography>                  
                   )}
-                  </Typography>
-                )}
-              </CardContent>
-            </Card>
-          </ThemeProvider>
-        </Container>
-      </CssBaseline>
-    </ThemeProvider>
+                </CardContent>
+              </Card>
+            </ThemeProvider>
+          </Container>
+        </CssBaseline>
+      </ThemeProvider>
+    </>
   );
 }
