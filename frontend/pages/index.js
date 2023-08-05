@@ -26,8 +26,6 @@ export default function Home() {
   const [currentPercentile, setCurrentPercentile] = useState(0);
   const [equivalentRankPercentile, setEquivalentRankPercentile] = useState(0);
   
-
-
   const [allRanks, setAllRanks] = useState({
     "League of Legends": [],
     "Valorant": []
@@ -39,15 +37,11 @@ export default function Home() {
         .from('League_Ranks')
         .select('tier, cumulative_percentile')
         .order('cumulative_percentile', { ascending: true });
-
-      console.log(leagueRanks);
   
       let { data: valorantRanks, error: valorantError } = await supabase
         .from('Valorant_Ranks')
         .select('tier, cumulative_percentile')
         .order('cumulative_percentile', { ascending: true });
-      
-      console.log(valorantRanks);
 
       if (leagueError || valorantError) {
         console.error('Error fetching data:', leagueError || valorantError);
@@ -67,6 +61,13 @@ export default function Home() {
     setGame(newGame);
     setRank('');
   };
+
+  const handleGameChangeAndReset = (event, newGame) => {
+    handleGameChange(event, newGame);
+    setConvertedRank('');
+    setConvertedRankPercentile(0);
+  };
+  
 
   const handleRankChange = (event) => {
     setRank(event.target.value);
@@ -99,7 +100,6 @@ export default function Home() {
   setEquivalentRankPercentile(parseFloat(equivalentRankPercentile).toFixed(2));
 };
 
-  
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -118,23 +118,19 @@ export default function Home() {
             <Card sx={{bgcolor: '#FAF9F6'}}>
               <CardContent>
                 <Box sx={{ my: 2 }}>
-                  <ToggleButtonGroup
-                    value={game}
-                    exclusive
-                    onChange={handleGameChange}
-                    onClick={() => {
-                      setConvertedRank('');
-                      setConvertedRankPercentile(0);
-                    }}
-                    aria-label="game selection"
-                  >
-                    <ToggleButton value="League of Legends" aria-label="League of Legends">
-                      League of Legends
-                    </ToggleButton>
-                    <ToggleButton value="Valorant" aria-label="Valorant">
-                      Valorant
-                    </ToggleButton>
-                  </ToggleButtonGroup>
+                <ToggleButtonGroup
+                  value={game}
+                  exclusive
+                  onChange={handleGameChangeAndReset}
+                  aria-label="game selection"
+                >
+                  <ToggleButton value="League of Legends" aria-label="League of Legends" disabled={game === "League of Legends"}>
+                    League of Legends
+                  </ToggleButton>
+                  <ToggleButton value="Valorant" aria-label="Valorant" disabled={game === "Valorant"}>
+                    Valorant
+                  </ToggleButton>
+                </ToggleButtonGroup>
                 </Box>
                 <Box sx={{ my: 2 }}>
                   <FormControl fullWidth>
