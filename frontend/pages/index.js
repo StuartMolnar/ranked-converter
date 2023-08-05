@@ -162,11 +162,11 @@ export default function Home() {
                   <Typography variant="h6" align="center">
                     {!(rank === allRanks['League of Legends'][allRanks['League of Legends'].length - 1].tier || rank === allRanks['Valorant'][allRanks['Valorant'].length - 1].tier) ? (
                     <>
-                      In {game === 'League of Legends' ? 'League' : 'Valorant'}, {rank} is the top {currentPercentile}
+                      In {game === 'League of Legends' ? 'League' : 'Valorant'}, {rank} is the top {currentPercentile}%
                       <br />
                       In {game === 'League of Legends' ? 'Valorant': 'League'}, {convertedRank} is the top {convertedRankPercentile}%
                       <br />
-                      So {rank} is equivelant to the top {equivalentRankPercentile}% of {convertedRank}
+                      So {game === 'League of Legends' ? 'League' : 'Valorant'} {rank} is equivelant to the top {equivalentRankPercentile}% of {game === 'League of Legends' ? 'Valorant': 'League'} {convertedRank}
                     </>
                   ) : (
                     <>
