@@ -175,7 +175,7 @@ export default function Home() {
                         <>
                           <Box mb={1}> <Typography variant="h6" component="span">{rank}</Typography> in {game === 'League of Legends' ? 'League' : 'Valorant'} is the top <Typography variant="h6" component="span">{currentPercentile}%</Typography></Box>
                           <Box mb={1}><Typography variant="h6" component="span">{convertedRank}</Typography> in {game === 'League of Legends' ? 'Valorant': 'League'} is the top <Typography variant="h6" component="span">{convertedRankPercentile}%</Typography></Box>
-                          <Box>So {game === 'League of Legends' ? 'League' : 'Valorant'} <Typography variant="h6" component="span">{rank}</Typography> is equivelant to the <Typography variant="h6" component="span">top {equivalentRankPercentile}%</Typography> of {game === 'League of Legends' ? 'Valorant': 'League'} <Typography variant="h6" component="span">{convertedRank}</Typography></Box>
+                          <Box>So <Typography variant="h6" component="span">{game === 'League of Legends' ? 'League' : 'Valorant'} {rank}</Typography> is equivelant to the <Typography variant="h6" component="span">top {equivalentRankPercentile}%</Typography> of <Typography variant="h6" component="span">{game === 'League of Legends' ? 'Valorant': 'League'} {convertedRank}</Typography></Box>
                         </>
                       ) : (
                         <Box>{rank} is the lowest rank.</Box>
