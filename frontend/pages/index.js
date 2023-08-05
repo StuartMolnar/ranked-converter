@@ -19,107 +19,167 @@ const lightTheme = createTheme({
 });
 
 export default function Home() {
-  return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+  const [game, setGame] = useState('League of Legends');
+  const [rank, setRank] = useState('');
+  const [convertedRank, setConvertedRank] = useState('');
+  const [convertedRankPercentile, setConvertedRankPercentile] = useState(0);
+  const [currentPercentile, setCurrentPercentile] = useState(0);
+  const [equivalentRankPercentile, setEquivalentRankPercentile] = useState(0);
+  
+  const [allRanks, setAllRanks] = useState({
+    "League of Legends": [],
+    "Valorant": []
+  });
 
-      <main>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+  useEffect(() => {
+    const fetchRanks = async () => {
+      let { data: leagueRanks, error: leagueError } = await supabase
+        .from('League_Ranks')
+        .select('tier, cumulative_percentile')
+        .order('cumulative_percentile', { ascending: true });
+  
+      let { data: valorantRanks, error: valorantError } = await supabase
+        .from('Valorant_Ranks')
+        .select('tier, cumulative_percentile')
+        .order('cumulative_percentile', { ascending: true });
 
-        <p className={styles.description}>
-          Get started by editing <code>pages/index.js</code>
-        </p>
+      if (leagueError || valorantError) {
+        console.error('Error fetching data:', leagueError || valorantError);
+        return;
+      }
+  
+      setAllRanks({
+        "League of Legends": leagueRanks,
+        "Valorant": valorantRanks
+      });
+    };
+  
+    fetchRanks();
+  }, []);
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+  const handleGameChange = (event, newGame) => {
+    setGame(newGame);
+    setRank('');
+  };
 
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
+  const handleGameChangeAndReset = (event, newGame) => {
+    handleGameChange(event, newGame);
+    setConvertedRank('');
+    setConvertedRankPercentile(0);
+  };
+  
 
   const handleRankChange = (event) => {
     setRank(event.target.value);
   };
 
-      <style jsx>{`
-        main {
-          padding: 5rem 0;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-        }
-        footer {
-          width: 100%;
-          height: 100px;
-          border-top: 1px solid #eaeaea;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-        footer img {
-          margin-left: 0.5rem;
-        }
-        footer a {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          text-decoration: none;
-          color: inherit;
-        }
-        code {
-          background: #fafafa;
-          border-radius: 5px;
-          padding: 0.75rem;
-          font-size: 1.1rem;
-          font-family: Menlo, Monaco, Lucida Console, Liberation Mono,
-            DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace;
-        }
-      `}</style>
+  const handleConvert = () => {
+  const selectedRank = allRanks[game].find(rankObj => rankObj.tier === rank);
+  if (!selectedRank) {
+    console.error('Selected rank not found');
+    return;
+  }
 
-      <style jsx global>{`
-        html,
-        body {
-          padding: 0;
-          margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto,
-            Oxygen, Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue,
-            sans-serif;
-        }
-        * {
-          box-sizing: border-box;
-        }
-      `}</style>
-    </div>
-  )
+  const otherGame = game === 'League of Legends' ? 'Valorant' : 'League of Legends';
+  const equivalentRank = allRanks[otherGame].find(rankObj => rankObj.cumulative_percentile >= selectedRank.cumulative_percentile);
+
+  const equivalentRankIndex = allRanks[otherGame].indexOf(equivalentRank);
+
+  const isLastRank = equivalentRankIndex === allRanks[otherGame].length - 1;
+
+  const lowerRank = equivalentRankIndex > 0 ? allRanks[otherGame][equivalentRankIndex - 1] : null;
+
+  let equivalentRankPercentile = 100; 
+  if (!isLastRank && lowerRank) {
+    equivalentRankPercentile = ((selectedRank.cumulative_percentile - lowerRank.cumulative_percentile) / (equivalentRank.cumulative_percentile - lowerRank.cumulative_percentile)) * 100;
+  }
+
+  setConvertedRank(equivalentRank ? equivalentRank.tier : "No equivalent rank");
+  setConvertedRankPercentile(equivalentRank ? parseFloat(equivalentRank.cumulative_percentile).toFixed(2) : "100");
+  setCurrentPercentile(parseFloat(selectedRank.cumulative_percentile).toFixed(2));
+  setEquivalentRankPercentile(parseFloat(equivalentRankPercentile).toFixed(2));
+};
+
+
+  return (
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline>
+        <Container sx={{
+          height: '90vh',
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'center' 
+        }}>
+          
+          <ThemeProvider theme={lightTheme}>
+            <Typography sx={{color: '#FAF9F6'}} variant="h4" component="h1" gutterBottom align="center">
+              Ranked Converter
+            </Typography>
+            <Card sx={{bgcolor: '#FAF9F6'}}>
+              <CardContent>
+                <Box sx={{ my: 2 }}>
+                <ToggleButtonGroup
+                  value={game}
+                  exclusive
+                  onChange={handleGameChangeAndReset}
+                  aria-label="game selection"
+                >
+                  <ToggleButton value="League of Legends" aria-label="League of Legends" disabled={game === "League of Legends"}>
+                    League of Legends
+                  </ToggleButton>
+                  <ToggleButton value="Valorant" aria-label="Valorant" disabled={game === "Valorant"}>
+                    Valorant
+                  </ToggleButton>
+                </ToggleButtonGroup>
+                </Box>
+                <Box sx={{ my: 2 }}>
+                  <FormControl fullWidth>
+                    <InputLabel id="rank-label">{game} Rank</InputLabel>
+                    <Select
+                      labelId="rank-label"
+                      value={rank}
+                      onChange={handleRankChange}
+                      onOpen={() => {
+                        setConvertedRank('');
+                        setConvertedRankPercentile(0);
+                      }}
+                      label={`${game} Rank`}
+                    >
+                      {allRanks[game].map((rank) => (
+                        <MenuItem key={rank.tier} value={rank.tier}>
+                          {rank.tier}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+                <Box sx={{ my: 2 }}>
+                  <Button variant="contained" onClick={handleConvert} fullWidth>
+                    Convert
+                  </Button>
+                </Box>
+                {convertedRank && (
+                  <Typography variant="h6" align="center">
+                    {!(rank === allRanks['League of Legends'][allRanks['League of Legends'].length - 1].tier || rank === allRanks['Valorant'][allRanks['Valorant'].length - 1].tier) ? (
+                    <>
+                      In {game === 'League of Legends' ? 'League' : 'Valorant'}, {rank} is the top {currentPercentile}%
+                      <br />
+                      In {game === 'League of Legends' ? 'Valorant': 'League'}, {convertedRank} is the top {convertedRankPercentile}%
+                      <br />
+                      So {game === 'League of Legends' ? 'League' : 'Valorant'} {rank} is equivelant to the top {equivalentRankPercentile}% of {game === 'League of Legends' ? 'Valorant': 'League'} {convertedRank}
+                    </>
+                  ) : (
+                    <>
+                      {rank} is the lowest rank.
+                    </>
+                  )}
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+          </ThemeProvider>
+        </Container>
+      </CssBaseline>
+    </ThemeProvider>
+  );
 }
